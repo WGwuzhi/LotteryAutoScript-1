@@ -6,7 +6,7 @@ TEMPLATE_CONFIG_FILE="my_config.example.js"
 TEMPLATE_ENV_FILE="env.example.js"
 CONFIG_FILE="my_config.js"
 ENV_FILE="env.js"
-TARGET_DIR="./dist"
+TARGET_DIR="dist"
 BIN_NAME="lottery"
 
 create_win_bat() {
@@ -17,9 +17,13 @@ if [ -d "$TARGET_DIR" ]; then
 	rm -rf "$TARGET_DIR"
 fi
 
-npx pkg .
+if [[ -z "$1" ]]; then
+	$1=lottery-auto-script-node18-linux-x64
+fi
 
-# Searching in the current directory
+mkdir $TARGET_DIR
+npx pkg -t "$1" -o "$TARGET_DIR/lottery-auto-script-$1" .
+
 for file in "$TARGET_DIR/"*; do
 	TMPDIR="${file%.exe}"
 	TMPDIR_NAME="${TMPDIR##*/}"

@@ -8,28 +8,94 @@ on:
       - "lib/**"
       - "*.js"
       - "*.json"
+      - ".github/workflows/pkg.yml"
+      - "script/build/pkg.sh"
   workflow_dispatch:
 
 jobs:
-  build_all:
+  x64:
     runs-on: ubuntu-latest
+    name: node${{ matrix.nodev }}-${{ matrix.platform }}-x64
+    strategy:
+      matrix:
+        include:
+          - platform: linux
+            nodev: 18
+          - platform: macos
+            nodev: 18
+          - platform: win
+            nodev: 18
+          - platform: win
+            nodev: 12
     steps:
       - name: "Checkout codes"
         uses: actions/checkout@v2
       - name: "Use Node.js"
         uses: actions/setup-node@v1
         with:
-          node-version: "16"
+          node-version: "*"
       - name: "Pkg this"
         run: |
-          sudo apt install zip unzip
+          sudo apt install zip unzip build-essential -y
           npm install
-          npm run build_all
+          npm run pkg node${{ matrix.nodev }}-${{ matrix.platform }}-x64
       - name: "Upload to artifact"
         uses: actions/upload-artifact@v2
         with:
-          name: all_platform
-          path: dist/
+          name: node${{ matrix.nodev }}-${{ matrix.platform }}-x64
+          path: "dist/*.zip"
+      - name: "Upload to release draft"
+        uses: xresloader/upload-to-github-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+        with:
+          file: "dist/*.zip"
+          delete_file: "dist/*.zip"
+          tag_name: "v2"
+          overwrite: true
+  no-x64:
+    runs-on: ubuntu-latest
+    name: node${{ matrix.nodev }}-${{ matrix.platform }}-${{ matrix.arch }}
+    strategy:
+      matrix:
+        include:
+          - platform: linux
+            nodev: 18
+            runarch: aarch64
+            arch: arm64
+          - platform: linux
+            nodev: 18
+            runarch: armv7
+            arch: armv7
+    steps:
+      - uses: actions/checkout@v2.1.0
+      - uses: uraimo/run-on-arch-action@v2
+        name: "Pkg this"
+        with:
+          arch: ${{ matrix.runarch }}
+          distro: ubuntu20.04
+          githubToken: ${{ secrets.GH_TOKEN }}
+          setup: |
+            mkdir -p "${PWD}/dist"
+          dockerRunArgs: |
+            --volume "${PWD}/dist:/dist"
+          shell: /bin/sh
+          install: |
+            apt update -y
+            apt install zip unzip curl build-essential -y
+            curl -sL https://deb.nodesource.com/setup_18.x | bash -
+            apt install nodejs -y
+            npm install npm@latest -g
+          run: |
+            npm set strict-ssl=false
+            npm install
+            npm run pkg "node${{ matrix.nodev }}-${{ matrix.platform }}-${{ matrix.arch }}"
+            cp dist/* /dist
+      - name: "Upload to artifact"
+        uses: actions/upload-artifact@v2
+        with:
+          name: node${{ matrix.nodev }}-${{ matrix.platform }}-${{ matrix.arch }}
+          path: "dist/*.zip"
       - name: "Upload to release draft"
         uses: xresloader/upload-to-github-release@v1
         env:
