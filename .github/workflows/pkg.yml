@@ -59,12 +59,12 @@ jobs:
     strategy:
       matrix:
         include:
-          - platform: linux
-            nodev: 18
+          - platform: linuxstatic
+            nodev: 18.5.0
             runarch: aarch64
             arch: arm64
-          - platform: linux
-            nodev: 18
+          - platform: linuxstatic
+            nodev: 18.5.0
             runarch: armv7
             arch: armv7
     steps:
@@ -77,6 +77,8 @@ jobs:
           githubToken: ${{ secrets.GH_TOKEN }}
           setup: |
             mkdir -p "${PWD}/dist"
+            export PKG_CACHE_PATH="${PWD}/pkg_cache_path"
+            mkdir -p "${PKG_CACHE_PATH}"
           dockerRunArgs: |
             --volume "${PWD}/dist:/dist"
           shell: /bin/sh
@@ -85,10 +87,10 @@ jobs:
             apt install zip unzip curl build-essential -y
             curl -sL https://deb.nodesource.com/setup_18.x | bash -
             apt install nodejs -y
-            npm install npm@latest -g
+            curl -sL "https://github.com/vercel/pkg-fetch/releases/download/v3.4/node-v${{ matrix.nodev }}-${{ matrix.platform }}-${{ matrix.arch }}" -o "${PKG_CACHE_PATH}/fetched-v${{ matrix.nodev }}-${{ matrix.platform }}-${{ matrix.arch }}"
           run: |
             npm set strict-ssl=false
-            npm install --unsafe-perm=true --allow-root
+            npm install
             npm run pkg "node${{ matrix.nodev }}-${{ matrix.platform }}-${{ matrix.arch }}"
             cp dist/* /dist
       - name: "Upload to artifact"
