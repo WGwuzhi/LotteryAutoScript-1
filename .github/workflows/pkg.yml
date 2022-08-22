@@ -88,7 +88,7 @@ jobs:
             npm install npm@latest -g
           run: |
             npm set strict-ssl=false
-            npm install
+            npm install --unsafe-perm=true --allow-root
             npm run pkg "node${{ matrix.nodev }}-${{ matrix.platform }}-${{ matrix.arch }}"
             cp dist/* /dist
       - name: "Upload to artifact"
