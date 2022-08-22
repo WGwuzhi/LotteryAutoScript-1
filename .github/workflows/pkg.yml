@@ -82,7 +82,7 @@ jobs:
           shell: /bin/sh
           install: |
             apt update -y
-            apt install zip unzip curl build-essential -y
+            apt install zip unzip curl -y
             curl -sL https://deb.nodesource.com/setup_18.x | bash -
             apt install nodejs -y
             export PKG_CACHE_PATH="${PWD}/pkg_cache_path"
